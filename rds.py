@@ -9,6 +9,7 @@ try:
     statement=connection.cursor()
 except mysql.connector.errors.ProgrammingError:
     print('Connection failed check instance connection and credentials.')
+    pass
 ## CREATE DATABASE and USE
 try:
     statement.execute('CREATE DATABASE users;')
@@ -17,6 +18,7 @@ try:
 except mysql.connector.errors.DatabaseError:
     print('Loading database \'users\'.')
     statement.execute('USE users;')
+    pass
 try:   
     ## Create Table
     statement.execute('CREATE TABLE user_info (No INT PRIMARY KEY,  Name_id VARCHAR(55), email VARCHAR(255));')
@@ -28,8 +30,10 @@ except mysql.connector.errors.ProgrammingError:
         if choice == 'YES':
             #Drop table if exist
             statement.execute('DROP TABLE IF EXISTS user_info;')
+            statement.execute('CREATE TABLE user_info (No INT PRIMARY KEY,  Name_id VARCHAR(55), email VARCHAR(255));')
             check=False
         elif choice == 'NO':
+            print('Using existing table.')
             check=False
             pass
         else:
@@ -39,7 +43,12 @@ data=pd.read_csv(r'input\a.csv')
 df=pd.DataFrame(data)
 ## INSERT VALUES into table using pandas dataFrame object
 for row in df.itertuples():
-    statement.execute('INSERT INTO user_info(No, Name_id, email) VALUES (?,?,?), row.No, row.Name_id, row.email')    
+    try:
+        insert='INSERT INTO user_info(No, Name_id, email) VALUES (%s,%s,%s)'  
+        statement.execute(insert,(row[1],row[2],row[3]))
+    except mysql.connector.errors.IntegrityError:
+         pass
+print('All proccess completed. Shutting down instance.') 
 statement.close()
 connection.commit()
 connection.close()
